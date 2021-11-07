@@ -1,0 +1,11 @@
+
+config EXT_MEMC
+    bool "enable external QSPI RAM memory controller"
+
+if EXT_MEMC
+
+module = EXT_MEMC
+module-str = ext_memc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

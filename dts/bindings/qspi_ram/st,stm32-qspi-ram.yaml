@@ -1,0 +1,34 @@
+description: |
+    STM32 QSPI RAM
+    Representation of a serial flash on a quadspi bus:
+
+        mx25r6435f: qspi-nor-flash@0 {
+                compatible = "st,stm32-qspi-nor";
+                label = "MX25R6435F";
+                reg = <0>;
+                qspi-max-frequency = <80000000>;
+                size = <0x4000000>;
+                status = "okay";
+        };
+
+compatible: "st,stm32-qspi-ram"
+
+include: "base.yaml"
+
+on-bus: qspi
+
+properties:
+    qspi-max-frequency:
+      type: int
+      required: true
+      description: Maximum clock frequency of device's QSPI interface in Hz
+    label:
+      required: true
+    size:
+      type: int
+      required: true
+      description: Memory size in bits
+    data-lines:
+      type: int
+      required: true
+      description: Number of data lines (1,2,4 supported)

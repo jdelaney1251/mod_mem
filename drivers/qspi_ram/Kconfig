@@ -1,0 +1,13 @@
+
+config QSPI_RAM
+    bool "enable QSPI RAM driver"
+
+if QSPI_RAM
+
+module = QSPI_RAM
+module-str = qspi_ram
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.stm32"
+
+endif

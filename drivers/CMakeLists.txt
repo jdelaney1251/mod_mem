@@ -1,0 +1,3 @@
+
+
+add_subdirectory_ifdef(CONFIG_QSPI_RAM qspi_ram)

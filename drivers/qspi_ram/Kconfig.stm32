@@ -1,0 +1,6 @@
+
+# MCP3424 I2C ADC configuation options
+
+config QSPI_RAM_STM32
+    bool "QSPI RAM driver"
+    select USE_STM32_HAL_QSPI
