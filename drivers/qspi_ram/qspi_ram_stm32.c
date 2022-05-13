@@ -2,7 +2,8 @@
 #include <device.h>
 #include <sys/util.h>
 #include <soc.h>
-#include <pinmux/pinmux_stm32.h>
+//#include <pinmux/pinmux_stm32.h>
+#include <drivers/pinctrl.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
@@ -42,8 +43,9 @@ struct qspi_ram_stm32_config {
 	irq_config_func_t irq_config;
     uint32_t ram_size;
     uint32_t max_frequency;
-	const struct soc_gpio_pinctrl *pinctrl_list;
-	size_t pinctrl_list_size;
+	//const struct soc_gpio_pinctrl *pinctrl_list;
+	//size_t pinctrl_list_size;
+	const struct pinctrl_dev_config *pcfg;
 	uint8_t dummy_cycles;
 	uint8_t read_dummy_cycles;
 };
@@ -183,6 +185,9 @@ static int qspi_write(const struct device *dev, QSPI_CommandTypeDef *cmd, uint8_
     cmd->NbData = size;
 
 	dev_data->cmd_status = 0;
+
+	// ensure the BUSY flag is clear
+	HAL_QSPI_Abort_IT(&dev_data->hqspi);
 
     hal_ret = HAL_QSPI_Command_IT(&dev_data->hqspi, cmd);
 	if (hal_ret != HAL_OK) {
@@ -430,7 +435,8 @@ static int qspi_ram_stm32_init(const struct device *dev)
     uint32_t prescaler = 0;
     int ret;
 
-    ret = stm32_dt_pinctrl_configure(dev_cfg->pinctrl_list, dev_cfg->pinctrl_list_size, (uint32_t)dev_cfg->regs);
+    //ret = stm32_dt_pinctrl_configure(dev_cfg->pinctrl_list, dev_cfg->pinctrl_list_size, (uint32_t)dev_cfg->regs);
+	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT); 
     if (ret < 0)
     {
         LOG_ERR("QSPI pinctrl setup failed (%d)", ret);
@@ -461,7 +467,8 @@ static int qspi_ram_stm32_init(const struct device *dev)
 	__ASSERT_NO_MSG(prescaler <= STM32_QSPI_CLOCK_PRESCALER_MAX);
 	/* Initialize QSPI HAL */
 	dev_data->hqspi.Init.ClockPrescaler = prescaler;
-	dev_data->hqspi.Init.FlashSize = find_lsb_set(dev_cfg->ram_size);
+	dev_data->hqspi.Init.FlashSize = find_msb_set(dev_cfg->ram_size);
+	LOG_DBG("flashsize set to %d", find_msb_set(dev_cfg->ram_size));
 
 	LOG_DBG("prescaler %d", prescaler);
 
@@ -489,10 +496,13 @@ static int qspi_ram_stm32_init(const struct device *dev)
 
 static void qspi_ram_stm32_irq_config_func(const struct device *dev);
 
-static const struct soc_gpio_pinctrl qspi_pins[] =
-					ST_STM32_DT_PINCTRL(quadspi, 0);
+// static const struct soc_gpio_pinctrl qspi_pins[] =
+// 					ST_STM32_DT_PINCTRL(quadspi, 0);
+
 
 #define STM32_QSPI_NODE DT_PARENT(DT_DRV_INST(0))
+
+PINCTRL_DT_DEFINE(STM32_QSPI_NODE)
 
 static const struct qspi_ram_stm32_config qspi_ram_stm32_cfg = {
 	.regs = (QUADSPI_TypeDef *)DT_REG_ADDR(STM32_QSPI_NODE),
@@ -503,8 +513,9 @@ static const struct qspi_ram_stm32_config qspi_ram_stm32_cfg = {
 	.irq_config = qspi_ram_stm32_irq_config_func,
 	.ram_size = DT_INST_PROP(0, size) / 8U,
 	.max_frequency = DT_INST_PROP(0, qspi_max_frequency),
-	.pinctrl_list = qspi_pins,
-	.pinctrl_list_size = ARRAY_SIZE(qspi_pins),
+	//.pinctrl_list = qspi_pins,
+	//.pinctrl_list_size = ARRAY_SIZE(qspi_pins),
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_QSPI_NODE),
 	.dummy_cycles = 0,
 	.read_dummy_cycles = DT_INST_PROP(0, data_lines) / 2
 };

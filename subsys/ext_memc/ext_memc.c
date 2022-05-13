@@ -114,19 +114,20 @@ static int write_chunk(uint32_t addr, uint8_t *data, uint32_t data_len)
                         data_len);
     if (ret != 0)
     {
-        LOG_ERR("could not write memory chunk of size %d to addr 0x%x", 
+        LOG_ERR("%d: could not write memory chunk of size %d to addr 0x%x", 
+                    ret,
                     data_len,
                     addr);
         return ret;
     }
 
-    LOG_DBG("wrote %d byte chunk to mem at addr %x", 
-                        data_len,
-                        addr);
-    for (int i = 0; i < data_len; i++)
-    {
-        LOG_DBG("mem addr %x=%x", addr+i, data[i]);
-    }
+    // LOG_DBG("wrote %d byte chunk to mem at addr %x", 
+    //                     data_len,
+    //                     addr);
+    // for (int i = 0; i < data_len; i++)
+    // {
+    //     LOG_DBG("mem addr %x=%x", addr+i, data[i]);
+    // }
     return 0;
 }
 
@@ -186,6 +187,7 @@ int ext_memc_set_mode(uint8_t mode)
         LOG_ERR("could not set qspi_ram access mode");
         return ret;
     }
+    LOG_DBG("set access mode to %d", mode);
     memc_data.mode = mode;
     return ret;
 }
@@ -312,6 +314,7 @@ int ext_memc_write_append_to_block(ext_memc_blk_t *block, uint8_t *data,
         // if we've gone past the end of the block
         if ((block->w_ptr + data_len) > block->block_len)
         {
+            LOG_DBG("block overrun");
             ret = write_chunk(block->mem_start_addr + block->w_ptr,
                                 data,
                                 block->block_len - block->w_ptr);
@@ -325,6 +328,7 @@ int ext_memc_write_append_to_block(ext_memc_blk_t *block, uint8_t *data,
         }
         else 
         {
+            LOG_DBG("block normal append");
             ret = write_chunk(block->mem_start_addr + block->w_ptr,
                                 data,
                                 data_len);
@@ -357,6 +361,7 @@ int ext_memc_write_to_block(ext_memc_blk_t *block, uint8_t *data,
         {
             ret = ext_memc_set_mode(EXT_MEMC_MODE_RD_WR);
             if (ret != 0)
+                LOG_ERR("failed to enter RD_WR mode");
                 return ret;
         }
 

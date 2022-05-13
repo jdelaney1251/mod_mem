@@ -13,7 +13,7 @@ description: |
 
 compatible: "st,stm32-qspi-ram"
 
-include: "base.yaml"
+include: [base.yaml, pinctrl-device.yaml]
 
 on-bus: qspi
 
